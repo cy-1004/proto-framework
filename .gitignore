@@ -26,3 +26,5 @@ all.log
 # Logs
 backend/services/TextGeneration/logs/*.json
 
+docs/
+

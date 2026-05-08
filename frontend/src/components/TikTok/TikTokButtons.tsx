@@ -43,7 +43,7 @@ export default function TikTokButtons({ taskTitle = "" }: TikTokButtonsProps) {
   const [selectedUrl, setSelectedUrl] = useState("")
   const [postTitle, setPostTitle] = useState(taskTitle)
   const [copy, setCopy] = useState("")
-  const [publishing, setPublishing] = useState(false)
+  const [publishingMode, setPublishingMode] = useState<"publish" | "upload" | null>(null)
   const [publishError, setPublishError] = useState("")
   const [publishOk, setPublishOk] = useState(false)
 
@@ -120,31 +120,52 @@ export default function TikTokButtons({ taskTitle = "" }: TikTokButtonsProps) {
     }
   }
 
-  const handlePublish = async () => {
+  const handlePublish = async (mode: "publish" | "upload") => {
     if (!selectedUrl || !postTitle.trim()) {
       setPublishError("请填写标题并选择视频")
       return
     }
-    setPublishing(true)
+    setPublishingMode(mode)
     setPublishError("")
     try {
-      const res = await apiFetch("/api/tiktok/publish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: postTitle.trim(), description: copy, video_url: selectedUrl, video_size: videos.find(v => v.download_url === selectedUrl)?.size ?? 0 }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setPublishError(data.detail ?? "发布失败")
+      if (mode === "publish") {
+        const res = await apiFetch("/api/tiktok/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: postTitle.trim(),
+            description: copy,
+            video_url: selectedUrl,
+            video_size: videos.find((v) => v.download_url === selectedUrl)?.size ?? 0,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setPublishError(data.detail ?? "发布失败")
+        } else {
+          setPublishOk(true)
+          setPublishError(data.processing ? "视频已提交，TikTok 处理中，请稍后查看" : "")
+          setTimeout(() => { setPublishOpen(false); setPublishOk(false) }, data.processing ? 4000 : 2000)
+        }
       } else {
-        setPublishOk(true)
-        setPublishError(data.processing ? "视频已提交，TikTok 处理中，请稍后在草稿箱查看" : "")
-        setTimeout(() => { setPublishOpen(false); setPublishOk(false) }, data.processing ? 4000 : 2000)
+        const res = await apiFetch("/api/tiktok/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ video_url: selectedUrl }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setPublishError(data.detail ?? "上传失败")
+        } else {
+          setPublishOk(true)
+          setPublishError("视频已发送到 TikTok 草稿箱，请在 TikTok App 中完成编辑后发布")
+          setTimeout(() => { setPublishOpen(false); setPublishOk(false) }, 4000)
+        }
       }
     } catch {
       setPublishError("网络错误，请重试")
     } finally {
-      setPublishing(false)
+      setPublishingMode(null)
     }
   }
 
@@ -295,11 +316,28 @@ export default function TikTokButtons({ taskTitle = "" }: TikTokButtonsProps) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setPublishOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPublishOpen(false)}
+              disabled={publishingMode !== null}
+            >
               取消
             </Button>
-            <Button size="sm" onClick={handlePublish} disabled={publishing || publishOk}>
-              {publishing ? "发布中…" : "确认发布"}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePublish("upload")}
+              disabled={publishingMode !== null || publishOk}
+            >
+              {publishingMode === "upload" ? "上传中…" : "发布到草稿箱"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handlePublish("publish")}
+              disabled={publishingMode !== null || publishOk}
+            >
+              {publishingMode === "publish" ? "发布中…" : "直接发布"}
             </Button>
           </DialogFooter>
         </DialogContent>

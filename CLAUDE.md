@@ -70,12 +70,12 @@ pnpm build        # 生产构建
 FastAPI 应用，入口 `main.py`：
 - **`db.py`** — 数据库层，包含 SQLite 操作和 Chroma 向量库集成（向量召回 + FTS 排名融合）
 - **`deps.py`** — 认证依赖：`require_login`、`require_admin`、`check_quota`；`ENABLE_LOGIN=0` 时所有请求视为 admin 匿名用户
-- **`routers/`** — 各业务路由模块：`tasks`、`chat`、`generate`、`assets`、`narations`、`products`、`auth`、`users`、`debug`
+- **`routers/`** — 各业务路由模块：`tasks`、`chat`、`generate`、`assets`、`narations`、`products`、`auth`、`users`、`debug`、`tiktok`
 - **`services/`** — `embedding.py`（向量嵌入）、`vector_store.py`（Chroma 封装）、`media_analyzer.py`（媒体分析）
-- **数据库**：`tasks.db`（主业务数据）、`app.db`、`chroma_data/`（向量数据）
+- **数据库**：`tasks.db`（主业务数据，含 tasks / assets / task_assets / task_narations / narations / script_references / chat_sessions / chat_messages / generation_jobs / users / products / tiktok_accounts 等表）、`chroma_data/`（向量数据）
 - **媒体文件**：存储在 `backend/media/`，通过 `/media` 静态路由访问
 
-认证流程：Auth 中间件拦截所有非白名单路由，白名单为 `/api/auth/config`、`/api/auth/login`、`/media`、`/docs`、`/openapi.json`。
+认证流程：Auth 中间件拦截所有非白名单路由，白名单为 `/api/auth/config`、`/api/auth/login`、`/media`、`/docs`、`/openapi.json`。`ENABLE_LOGIN=0`（默认）时跳过鉴权，所有请求视为 admin；`ENABLE_DOWNLOAD=1` 时开放下载接口。
 
 ### 前端（`frontend/src/`）
 
@@ -86,7 +86,7 @@ React 19 + TypeScript + Vite，路由用 React Router v7：
 - **`config/options.tsx`** — 定义 `TASK_STAGES` 等业务配置常量
 - **`components/`** — `ChatPanel/`（LLM 对话）、`ScriptEditorInput/`（TipTap 富文本编辑器）、`StoryboardInput/`、`FinecutInput/`、`LibraryInput/`（素材搜索）；UI 基于 shadcn/ui + TailwindCSS
 
-### 外部 AI 服务（通过 `backend/.env` 配置）
+### 外部服务与环境变量（`backend/.env`）
 
 | 变量 | 用途 |
 |------|------|
@@ -98,12 +98,36 @@ React 19 + TypeScript + Vite，路由用 React Router v7：
 | `ARK_API_KEY` | 即梦/Seedance 视频生成 |
 | `XAI_API_KEY` | Grok 图像生成 |
 | `FAL_API_KEY` | FAL 图像生成 |
+| `ENABLE_LOGIN` | `1` 开启登录鉴权，默认 `0` |
+| `ENABLE_DOWNLOAD` | `1` 开启下载接口，默认 `0` |
+| `JWT_SECRET` | JWT 签名密钥（生产环境必须修改） |
+| `TIKTOK_CLIENT_KEY` | TikTok OAuth 应用 Key |
+| `TIKTOK_CLIENT_SECRET` | TikTok OAuth 应用 Secret |
+| `TIKTOK_REDIRECT_URI` | TikTok OAuth 回调地址 |
 
 ### 搜索配置（`backend/.env`）
 
 - `SCORE_METHOD=RRF` — 向量召回 + FTS 排名融合
 - `SCORE_METHOD=SIM_BM25` — 混合评分：`0.7 * (1 - distance) + 0.3 * normalized_bm25`
 - `SCORE_THRESHOLD_SIM` — SIM 模式相似度过滤阈值（默认 0.3）
+
+### TextGeneration 微服务（`backend/services/TextGeneration/`）
+
+独立 FastAPI 服务，实现短视频电商文案的多 Agent 自动生成（LangGraph + OpenRouter），**独立运行**，不挂载到主 FastAPI 实例：
+
+```bash
+cd backend/services/TextGeneration
+uvicorn app:app --host 0.0.0.0 --port 8001
+```
+
+核心 LangGraph 流程：`manager → writer → roaster → manager → (loop or END)`
+
+- **manager_agent** — 决策节点，输出 `write/rewrite/pass/finish`
+- **copy_writer_agent** — 文案生成/修改（高温 0.8）
+- **copy_roaster_agent** — 评分（5 维度，总分 10 分）；低于 7.0 分且未超 5 轮则重写
+- **chat_agent** — 对话 Agent，带 SQLite 记忆（`data/memory.db`）
+
+对外接口：`POST /generate`（输入产品描述或商品 URL，输出结构化 JSON）；详见 `services/TextGeneration/CLAUDE.md`。
 
 ---
 

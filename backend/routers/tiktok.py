@@ -22,7 +22,7 @@ TIKTOK_REDIRECT_URI = os.environ.get(
 )
 EXTERNAL_HISTORY_API = "https://service.wh-press.com/api/tiktok/history"
 EXTERNAL_VIDEOS_API = "https://service.wh-press.com/api/videos"
-TIKTOK_SCOPE = "user.info.basic,video.publish"
+TIKTOK_SCOPE = "user.info.basic,video.publish,video.upload"
 
 
 class BindRequest(BaseModel):
@@ -34,6 +34,10 @@ class PublishRequest(BaseModel):
     description: str
     video_url: str
     video_size: int = 0
+
+
+class UploadRequest(BaseModel):
+    video_url: str
 
 
 @router.get("/auth-url")
@@ -248,6 +252,53 @@ async def publish_video(req: PublishRequest, user: dict = Depends(require_login)
         # 若仍在处理中，前端展示对应提示
         "processing": status != "PUBLISH_COMPLETE",
     }
+
+
+@router.post("/upload")
+async def upload_video_to_inbox(req: UploadRequest, user: dict = Depends(require_login)):
+    """发布到草稿箱（video.upload），视频进入 TikTok inbox，用户在 app 内完成编辑后发布。"""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT access_token FROM tiktok_accounts WHERE user_id = ?", (user["id"],)
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=400, detail="未绑定 TikTok 账号")
+
+    access_token = row["access_token"]
+
+    payload = {
+        "source_info": {
+            "source": "PULL_FROM_URL",
+            "video_url": req.video_url,
+        }
+    }
+
+    import logging
+    logging.warning("[TikTok upload] payload=%s token_prefix=%s", payload, access_token[:10])
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                "https://open.tiktokapis.com/v2/post/publish/inbox/video/init/",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json; charset=UTF-8",
+                },
+                json=payload,
+            )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"TikTok API 请求失败: {e}")
+
+    result = resp.json()
+    logging.warning("[TikTok upload] status=%s response=%s", resp.status_code, result)
+    err = result.get("error", {})
+    if resp.status_code != 200 or err.get("code") not in ("ok", "success", None, 0):
+        code = err.get("code", "unknown")
+        msg = err.get("message") or result.get("message", "未知错误")
+        raise HTTPException(status_code=502, detail=f"TikTok 上传失败 [{code}]: {msg}")
+
+    publish_id = result.get("data", {}).get("publish_id", "")
+    return {"ok": True, "publish_id": publish_id}
 
 
 @router.get("/videos")
