@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+requests
+ffmpeg-python
+Pillow
+python-multipart
+httpx
+chromadb
+google-genai
+volcengine-python-sdk
+pyjwt
+bcrypt
+langgraph>=0.4.0
+langchain>=0.3.0
+langchain-openai>=0.3.0

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(netstat -ano)",
+      "Bash(./.venv/Scripts/python.exe -c \"from services.textgen import generate_narration; print\\('import OK'\\); from core.graph import build_graph; from core.state import make_initial_state; from tools.copy_parser import parse_copy_to_json; print\\('TextGeneration deep import OK'\\)\")",
+      "Bash(./.venv/Scripts/python.exe -c ':*)",
+      "Bash(./.venv/Scripts/python.exe:*)",
+      "Bash(pnpm tsc *)"
+    ]
+  }
+}
