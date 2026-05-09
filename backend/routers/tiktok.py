@@ -15,8 +15,8 @@ from deps import require_login
 
 router = APIRouter(prefix="/api/tiktok", tags=["tiktok"])
 
-TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY", "sbawbhtwpss73izhiu")
-TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET", "80iF43WnbGbet8RRJqP4sAzSKmOvp3va")
+TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY", "sbawapdrqmrfdiqjbb")
+TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET", "T2HGYi6MF6MsuY1RjQdimeLNSMKz8H62")
 TIKTOK_REDIRECT_URI = os.environ.get(
     "TIKTOK_REDIRECT_URI", "https://service.wh-press.com/api/tiktok/callback"
 )
