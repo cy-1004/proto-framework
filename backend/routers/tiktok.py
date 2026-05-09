@@ -182,7 +182,7 @@ async def publish_video(req: PublishRequest, user: dict = Depends(require_login)
 
     # Unaudited apps are only permitted to post with SELF_ONLY privacy.
     # Change to PUBLIC_TO_EVERYONE after the app passes TikTok's audit.
-    privacy_level = "PUBLIC_TO_EVERYONE"
+    privacy_level = "SELF_ONLY"
 
     payload = {
         "post_info": {
