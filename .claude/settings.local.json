@@ -8,7 +8,8 @@
       "Bash(./.venv/Scripts/python.exe:*)",
       "Bash(pnpm tsc *)",
       "WebFetch(domain:developers.tiktok.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(xargs grep -l \"tiktok\\\\|TikTok\")"
     ]
   }
 }

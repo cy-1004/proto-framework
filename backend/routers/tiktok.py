@@ -15,8 +15,8 @@ from deps import require_login
 
 router = APIRouter(prefix="/api/tiktok", tags=["tiktok"])
 
-TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY", "sbawapdrqmrfdiqjbb")
-TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET", "T2HGYi6MF6MsuY1RjQdimeLNSMKz8H62")
+TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY", "awhmk60m9hx8p95s")
+TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET", "qrIElxKPvzHmf8TVRZJ6hPhqnaMmAgTx")
 TIKTOK_REDIRECT_URI = os.environ.get(
     "TIKTOK_REDIRECT_URI", "https://service.wh-press.com/api/tiktok/callback"
 )
@@ -34,6 +34,9 @@ class PublishRequest(BaseModel):
     description: str
     video_url: str
     video_size: int = 0
+    privacy_level: str = "PUBLIC_TO_EVERYONE"
+    brand_organic_toggle: bool = False  # promote own brand
+    brand_content_toggle: bool = False  # paid partnership / third-party brand
 
 
 class UploadRequest(BaseModel):
@@ -180,15 +183,17 @@ async def publish_video(req: PublishRequest, user: dict = Depends(require_login)
     access_token = row["access_token"]
     title = (f"{req.title} {req.description}".strip() if req.description else req.title)[:150]
 
-    # Unaudited apps are only permitted to post with SELF_ONLY privacy.
-    # Change to PUBLIC_TO_EVERYONE after the app passes TikTok's audit.
-    privacy_level = "SELF_ONLY"
+    post_info: dict = {
+        "title": title,
+        "privacy_level": req.privacy_level or "SELF_ONLY",
+    }
+    if req.brand_organic_toggle:
+        post_info["brand_organic_toggle"] = True
+    if req.brand_content_toggle:
+        post_info["brand_content_toggle"] = True
 
     payload = {
-        "post_info": {
-            "title": title,
-            "privacy_level": privacy_level,
-        },
+        "post_info": post_info,
         "source_info": {
             "source": "PULL_FROM_URL",
             "video_url": req.video_url,

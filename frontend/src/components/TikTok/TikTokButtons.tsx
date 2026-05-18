@@ -43,6 +43,9 @@ export default function TikTokButtons({ taskTitle = "" }: TikTokButtonsProps) {
   const [selectedUrl, setSelectedUrl] = useState("")
   const [postTitle, setPostTitle] = useState(taskTitle)
   const [copy, setCopy] = useState("")
+  const [privacyLevel, setPrivacyLevel] = useState("PUBLIC_TO_EVERYONE")
+  const [commercialDisclosure, setCommercialDisclosure] = useState(false)
+  const [brandType, setBrandType] = useState<"organic" | "content">("organic")
   const [publishingMode, setPublishingMode] = useState<"publish" | "upload" | null>(null)
   const [publishError, setPublishError] = useState("")
   const [publishOk, setPublishOk] = useState(false)
@@ -106,6 +109,9 @@ export default function TikTokButtons({ taskTitle = "" }: TikTokButtonsProps) {
     setPostTitle(taskTitle)
     setCopy("")
     setSelectedUrl("")
+    setPrivacyLevel("PUBLIC_TO_EVERYONE")
+    setCommercialDisclosure(false)
+    setBrandType("organic")
     setPublishError("")
     setPublishOk(false)
     setVideosLoading(true)
@@ -137,6 +143,9 @@ export default function TikTokButtons({ taskTitle = "" }: TikTokButtonsProps) {
             description: copy,
             video_url: selectedUrl,
             video_size: videos.find((v) => v.download_url === selectedUrl)?.size ?? 0,
+            privacy_level: privacyLevel,
+            brand_organic_toggle: commercialDisclosure && brandType === "organic",
+            brand_content_toggle: commercialDisclosure && brandType === "content",
           }),
         })
         const data = await res.json()
@@ -257,6 +266,69 @@ export default function TikTokButtons({ taskTitle = "" }: TikTokButtonsProps) {
                 onChange={(e) => setCopy(e.target.value)}
                 placeholder="发布描述文案…"
               />
+            </div>
+
+            {/* Privacy level — only shown for direct publish */}
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">谁可以看此视频</label>
+              <select
+                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
+                value={privacyLevel}
+                onChange={(e) => setPrivacyLevel(e.target.value)}
+              >
+                <option value="PUBLIC_TO_EVERYONE">所有人</option>
+                <option value="MUTUAL_FOLLOW_FRIENDS">互相关注的好友</option>
+                <option value="FOLLOWER_OF_CREATOR">我的粉丝</option>
+                <option value="SELF_ONLY">仅自己可见</option>
+              </select>
+            </div>
+
+            {/* Commercial content disclosure */}
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-muted-foreground">商业内容披露</label>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={commercialDisclosure}
+                  onClick={() => setCommercialDisclosure((v) => !v)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                    commercialDisclosure ? "bg-primary" : "bg-muted-foreground/30"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                      commercialDisclosure ? "translate-x-4" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+              {commercialDisclosure && (
+                <div className="mt-2 space-y-2 rounded-md border bg-muted/30 px-3 py-2">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs">
+                    <input
+                      type="radio"
+                      name="brandType"
+                      value="organic"
+                      checked={brandType === "organic"}
+                      onChange={() => setBrandType("organic")}
+                      className="accent-primary"
+                    />
+                    推广我自己的品牌或产品
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-xs">
+                    <input
+                      type="radio"
+                      name="brandType"
+                      value="content"
+                      checked={brandType === "content"}
+                      onChange={() => setBrandType("content")}
+                      className="accent-primary"
+                    />
+                    推广第三方品牌或产品（赞助内容）
+                  </label>
+                </div>
+              )}
             </div>
 
             <div>
