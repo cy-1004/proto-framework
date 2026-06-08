@@ -144,7 +144,6 @@ def _run_url_job(job_id: str, url: str, tmp_dir: str):
                 "-f", "bestaudio/best",
                 "-x", "--audio-format", "mp3", "--audio-quality", "5",
                 "--no-playlist",
-                "--impersonate", "chrome",
                 "-o", os.path.join(tmp_dir, "audio.%(ext)s"),
                 url,
             ],
