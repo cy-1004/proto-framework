@@ -1,7 +1,6 @@
 import { useRef, useState } from "react"
 import { ImagePlus, X, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { apiFetch } from "@/lib/api"
 import { useJobStream } from "./useJobStream"

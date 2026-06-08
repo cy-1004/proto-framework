@@ -171,7 +171,7 @@ export default function TranscribeTool() {
           <div className="min-h-[120px] rounded-lg border bg-muted/30 p-4 text-sm leading-relaxed whitespace-pre-wrap">
             {transcript}
           </div>
-          {job.result?.audio_duration && (
+          {!!job.result?.audio_duration && (
             <p className="text-xs text-muted-foreground">
               音频时长：{Math.round(job.result.audio_duration as number)}s
               {job.result.cost_usd ? `  ·  预计费用：$${(job.result.cost_usd as number).toFixed(4)}` : ""}
