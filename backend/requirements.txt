@@ -14,3 +14,5 @@ bcrypt
 langgraph>=0.4.0
 langchain>=0.3.0
 langchain-openai>=0.3.0
+assemblyai
+yt-dlp

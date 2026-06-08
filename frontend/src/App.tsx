@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage"
 import TaskPage from "./pages/TaskPage"
 import LoginPage from "./pages/LoginPage"
 import UserManagePage from "./pages/UserManagePage"
+import ToolsPage from "./pages/ToolsPage"
 import DebugPanel from "./components/DebugPanel"
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/task/:id/:stageId" element={<RequireAuth><TaskPage /></RequireAuth>} />
         <Route path="/task/:id/:stageId/:category" element={<RequireAuth><TaskPage /></RequireAuth>} />
         <Route path="/admin/users" element={<RequireAdmin><UserManagePage /></RequireAdmin>} />
+        <Route path="/tools" element={<RequireAuth><ToolsPage /></RequireAuth>} />
       </Routes>
       <DebugPanel />
       <Toaster position="top-center" richColors />

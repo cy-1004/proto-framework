@@ -9,7 +9,10 @@
       "Bash(pnpm tsc *)",
       "WebFetch(domain:developers.tiktok.com)",
       "WebSearch",
-      "Bash(xargs grep -l \"tiktok\\\\|TikTok\")"
+      "Bash(xargs grep -l \"tiktok\\\\|TikTok\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\workspace\\\\vultr-proto-framework\\\\proto-framework\\\\frontend\\\\src\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)"
     ]
   }
 }

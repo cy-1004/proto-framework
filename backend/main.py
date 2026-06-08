@@ -21,6 +21,10 @@ from routers.auth import router as auth_router
 from routers.users import router as users_router
 from routers.products import router as products_router
 from routers.tiktok import router as tiktok_router
+from services.ToolsCollection.transcribe import router as tools_router
+from services.ToolsCollection.copywrite import router as tools_copywrite_router
+from services.ToolsCollection.tts import router as tools_tts_router
+from services.ToolsCollection.video import router as tools_video_router
 
 app = FastAPI()
 
@@ -58,6 +62,10 @@ app.include_router(generate_router)
 app.include_router(narations_router)
 app.include_router(products_router)
 app.include_router(tiktok_router)
+app.include_router(tools_router)
+app.include_router(tools_copywrite_router)
+app.include_router(tools_tts_router)
+app.include_router(tools_video_router)
 
 media_dir = os.path.join(BASE_DIR, "media")
 os.makedirs(media_dir, exist_ok=True)

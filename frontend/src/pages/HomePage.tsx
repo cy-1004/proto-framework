@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { User, Trash2, LogIn, LogOut, Users } from "lucide-react"
+import { User, Trash2, LogIn, LogOut, Users, Wrench } from "lucide-react"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import logo from "@/assets/logo.png"
@@ -10,6 +10,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import HomeInput from "@/components/HomeInput"
 import { TASK_STAGES } from "@/config/options"
 
@@ -49,7 +50,12 @@ export default function HomePage() {
           <img src={logo} alt="logo" className="h-6 w-6" />
           <h1 className="text-lg font-semibold">TKMax</h1>
         </div>
-        <DropdownMenu>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/tools")}>
+            <Wrench className="mr-1.5 size-4" />
+            TKMAX 工具集
+          </Button>
+          <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Avatar className="size-8 cursor-pointer">
               <AvatarFallback>
@@ -83,6 +89,7 @@ export default function HomePage() {
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </nav>
 
       <main className="mx-auto flex max-w-[54rem] flex-col items-center gap-6 px-4 pt-24">

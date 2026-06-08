@@ -606,6 +606,28 @@ def init_db():
         """)
         conn.commit()
 
+        # ── tool_jobs ─────────────────────────────────────────────────────────
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tool_jobs (
+                id             TEXT PRIMARY KEY,
+                user_id        INTEGER,
+                tool           TEXT NOT NULL,
+                model          TEXT NOT NULL,
+                input_type     TEXT NOT NULL,
+                input_ref      TEXT DEFAULT '',
+                status         TEXT DEFAULT 'pending',
+                progress       INTEGER DEFAULT 0,
+                message        TEXT DEFAULT '',
+                result         TEXT,
+                error          TEXT,
+                audio_duration REAL,
+                cost_usd       REAL,
+                created_at     TEXT DEFAULT (datetime('now', 'localtime')),
+                completed_at   TEXT
+            )
+        """)
+        conn.commit()
+
         # ── seed: products & product_assets ───────────────────────────────────
         product_count = conn.execute("SELECT COUNT(*) FROM products").fetchone()[0]
         if product_count == 0:
