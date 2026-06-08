@@ -36,7 +36,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-AUTH_WHITELIST = ("/api/auth/config", "/api/auth/login", "/media", "/docs", "/openapi.json")
+AUTH_WHITELIST = (
+    "/api/auth/config", "/api/auth/login",
+    "/media", "/docs", "/openapi.json",
+    "/api/tools/jobs/",       # SSE stream — EventSource can't send auth headers
+    "/api/generate/jobs/",    # same issue for existing generate stream
+)
 
 
 @app.middleware("http")

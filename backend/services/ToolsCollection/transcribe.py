@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import uuid
@@ -18,6 +19,17 @@ from deps import require_login
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/tools", tags=["tools"])
+
+
+def _yt_dlp_bin() -> str:
+    """Find yt-dlp inside the active venv or system PATH."""
+    path = shutil.which("yt-dlp")
+    if path:
+        return path
+    venv_bin = os.path.join(os.path.dirname(sys.executable), "yt-dlp")
+    if os.path.isfile(venv_bin):
+        return venv_bin
+    raise RuntimeError("yt-dlp 未找到，请运行: pip install yt-dlp")
 
 
 def _create_tool_job(user_id: int, tool: str, model: str, input_type: str, input_ref: str) -> str:
@@ -128,7 +140,7 @@ def _run_url_job(job_id: str, url: str, tmp_dir: str):
         _update_tool_job(job_id, status="running", progress=10, message="正在下载 TikTok 音频...")
         r = subprocess.run(
             [
-                "yt-dlp", "-f", "bestaudio", "-x",
+                _yt_dlp_bin(), "-f", "bestaudio", "-x",
                 "--audio-format", "mp3",
                 "--audio-quality", "5",
                 "--no-playlist",
