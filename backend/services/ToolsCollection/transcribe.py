@@ -140,10 +140,11 @@ def _run_url_job(job_id: str, url: str, tmp_dir: str):
         _update_tool_job(job_id, status="running", progress=10, message="正在下载 TikTok 音频...")
         r = subprocess.run(
             [
-                _yt_dlp_bin(), "-f", "bestaudio", "-x",
-                "--audio-format", "mp3",
-                "--audio-quality", "5",
+                _yt_dlp_bin(),
+                "-f", "bestaudio/best",
+                "-x", "--audio-format", "mp3", "--audio-quality", "5",
                 "--no-playlist",
+                "--impersonate", "chrome",
                 "-o", os.path.join(tmp_dir, "audio.%(ext)s"),
                 url,
             ],

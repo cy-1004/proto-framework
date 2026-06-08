@@ -16,3 +16,4 @@ langchain>=0.3.0
 langchain-openai>=0.3.0
 assemblyai
 yt-dlp
+curl_cffi
