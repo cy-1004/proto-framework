@@ -31,8 +31,12 @@ export default function TranscribeTool() {
       else form.append("url", url.trim())
 
       const res = await apiFetch("/api/tools/transcribe", { method: "POST", body: form })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || "提交失败")
+      let data: Record<string, unknown> = {}
+      try { data = await res.json() } catch { /* nginx may return HTML on 413 */ }
+      if (!res.ok) {
+        if (res.status === 413) throw new Error("文件太大，请联系管理员调整服务器上传限制")
+        throw new Error((data.detail as string) || `服务器错误 (${res.status})`)
+      }
       setJobId(data.job_id)
     } catch (e: unknown) {
       setSubmitError(e instanceof Error ? e.message : "提交失败")
