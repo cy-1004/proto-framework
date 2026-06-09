@@ -37,7 +37,7 @@ export default function TranscribeTool() {
         if (res.status === 413) throw new Error("文件太大，请联系管理员调整服务器上传限制")
         throw new Error((data.detail as string) || `服务器错误 (${res.status})`)
       }
-      setJobId(data.job_id)
+      setJobId(data.job_id as string)
     } catch (e: unknown) {
       setSubmitError(e instanceof Error ? e.message : "提交失败")
     } finally {
