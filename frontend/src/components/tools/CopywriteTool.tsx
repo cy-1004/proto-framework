@@ -27,6 +27,8 @@ export default function CopywriteTool() {
   const [productInfo, setProductInfo] = useState("")
   const [referenceText, setReferenceText] = useState("")
   const [duration, setDuration] = useState(30)
+  const [durationCustom, setDurationCustom] = useState(false)
+  const [customDurationVal, setCustomDurationVal] = useState("")
   const [model, setModel] = useState(MODEL_OPTIONS[0].value)
   const [outputText, setOutputText] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
@@ -115,7 +117,12 @@ export default function CopywriteTool() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const selectedDuration = DURATION_OPTIONS.find(o => o.value === duration)!
+  const selectedDuration = DURATION_OPTIONS.find(o => o.value === duration)
+  const durationLabel = durationCustom
+    ? `${duration} 秒（约 ${Math.round(duration * 3.3)} 字）`
+    : selectedDuration
+      ? `${selectedDuration.label}（${selectedDuration.hint}）`
+      : `${duration} 秒`
 
   return (
     <div className="space-y-5">
@@ -180,17 +187,17 @@ export default function CopywriteTool() {
         <Label>
           口播时长参考
           <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-            当前选择：{selectedDuration.label}（{selectedDuration.hint}）
+            当前选择：{durationLabel}
           </span>
         </Label>
         <div className="flex flex-wrap gap-2">
           {DURATION_OPTIONS.map(opt => (
             <button
               key={opt.value}
-              onClick={() => setDuration(opt.value)}
+              onClick={() => { setDuration(opt.value); setDurationCustom(false) }}
               disabled={isGenerating}
               className={`rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
-                duration === opt.value
+                !durationCustom && duration === opt.value
                   ? "border-primary bg-primary/10 font-medium text-primary"
                   : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
               }`}
@@ -199,7 +206,37 @@ export default function CopywriteTool() {
               <span className="ml-1 text-xs opacity-60">{opt.hint}</span>
             </button>
           ))}
+          <button
+            onClick={() => setDurationCustom(true)}
+            disabled={isGenerating}
+            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+              durationCustom
+                ? "border-primary bg-primary/10 font-medium text-primary"
+                : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+            }`}
+          >
+            自定义...
+          </button>
         </div>
+        {durationCustom && (
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={customDurationVal}
+              onChange={(e) => {
+                setCustomDurationVal(e.target.value)
+                const v = parseInt(e.target.value)
+                if (!isNaN(v) && v > 0) setDuration(v)
+              }}
+              placeholder="输入秒数，如 75"
+              min={5}
+              max={600}
+              disabled={isGenerating}
+              className="w-40 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            />
+            <span className="text-xs text-muted-foreground">秒</span>
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

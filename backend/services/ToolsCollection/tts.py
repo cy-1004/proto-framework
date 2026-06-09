@@ -81,19 +81,32 @@ def synthesize_tts(body: TTSRequest, user: dict = Depends(require_login)):
         if tone_list:
             payload["pronunciation_dict"] = {"tone": tone_list}
 
-    try:
-        resp = requests.post(
+    def _call_tts(p: dict) -> dict:
+        r = requests.post(
             TTS_API_URL,
-            json=payload,
+            json=p,
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             timeout=120,
         )
-        result = resp.json()
+        return r.json()
+
+    try:
+        result = _call_tts(payload)
     except Exception as e:
         _update_tool_job(job_id, status="failed", progress=100, message=str(e), error=str(e))
         raise HTTPException(502, f"TTS 请求失败: {e}")
 
     base_resp = result.get("base_resp", {})
+    # Some voices don't support the emotion field — auto-retry without it
+    if base_resp.get("status_code", -1) != 0 and "emotion" in base_resp.get("status_msg", ""):
+        payload["voice_setting"].pop("emotion", None)
+        try:
+            result = _call_tts(payload)
+            base_resp = result.get("base_resp", {})
+        except Exception as e:
+            _update_tool_job(job_id, status="failed", progress=100, message=str(e), error=str(e))
+            raise HTTPException(502, f"TTS 请求失败: {e}")
+
     if base_resp.get("status_code", -1) != 0:
         msg = base_resp.get("status_msg", "Unknown TTS error")
         _update_tool_job(job_id, status="failed", progress=100, message=msg, error=msg)

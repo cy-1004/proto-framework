@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { apiFetch } from "@/lib/api"
 import VoicePickerModal from "./VoicePickerModal"
-import { EMOTION_OPTIONS } from "./voiceData"
+import { EMOTION_OPTIONS, findVoice } from "./voiceData"
 
 const DEFAULT_VOICE = "male-qn-qingse"
 
@@ -23,6 +23,9 @@ export default function TTSTool() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [duration, setDuration] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const currentVoice = findVoice(voiceId)
+  const emotionSupported = !!currentVoice?.supportsEmotion
 
   const addPronRow = () => setPronDict(prev => [...prev, { text: "", pronunciation: "" }])
   const removePronRow = (i: number) => setPronDict(prev => prev.filter((_, idx) => idx !== i))
@@ -90,11 +93,16 @@ export default function TTSTool() {
 
         {/* Emotion */}
         <div className="space-y-2">
-          <Label>情绪</Label>
+          <Label>
+            情绪
+            {!emotionSupported && (
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground">当前音色不支持</span>
+            )}
+          </Label>
           <select
             value={emotion}
             onChange={(e) => setEmotion(e.target.value)}
-            disabled={isGenerating}
+            disabled={isGenerating || !emotionSupported}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
           >
             {EMOTION_OPTIONS.map(opt => (
