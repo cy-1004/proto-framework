@@ -42,6 +42,10 @@ export default function VideoGenTool() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [durationCustom, setDurationCustom] = useState(false)
+  const [customDurationVal, setCustomDurationVal] = useState("5")
+  const [aspectRatioCustom, setAspectRatioCustom] = useState(false)
+  const [customAspectRatioVal, setCustomAspectRatioVal] = useState("16:9")
 
   const job = useJobStream(jobId)
   const isRunning = job.status === "pending" || job.status === "running"
@@ -163,18 +167,42 @@ export default function VideoGenTool() {
         <div className="space-y-2">
           <Label>时长（秒）</Label>
           <select
-            value={config.duration}
-            onChange={(e) => setConfigField("duration", parseInt(e.target.value))}
+            value={durationCustom ? "custom" : String(config.duration)}
+            onChange={(e) => {
+              if (e.target.value === "custom") {
+                setDurationCustom(true)
+              } else {
+                setDurationCustom(false)
+                setConfigField("duration", parseInt(e.target.value))
+              }
+            }}
             disabled={isRunning}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
           >
-            {provider === "veo3.1"
-              ? [4, 6, 8].map(d => <option key={d} value={d}>{d}s</option>)
+            {(provider === "veo3.1"
+              ? [4, 6, 8]
               : provider === "seedance"
-                ? [5].map(d => <option key={d} value={d}>{d}s</option>)
-                : [5, 6, 8, 10].map(d => <option key={d} value={d}>{d}s</option>)
-            }
+                ? [5]
+                : [5, 6, 8, 10]
+            ).map(d => <option key={d} value={d}>{d}s</option>)}
+            <option value="custom">自定义...</option>
           </select>
+          {durationCustom && (
+            <input
+              type="number"
+              value={customDurationVal}
+              onChange={(e) => {
+                setCustomDurationVal(e.target.value)
+                const v = parseInt(e.target.value)
+                if (!isNaN(v) && v > 0) setConfigField("duration", v)
+              }}
+              placeholder="输入秒数"
+              min={1}
+              max={120}
+              disabled={isRunning}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            />
+          )}
         </div>
 
         <div className="space-y-2">
@@ -189,14 +217,37 @@ export default function VideoGenTool() {
               {["768P", "1080P"].map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           ) : (
-            <select
-              value={config.aspect_ratio}
-              onChange={(e) => setConfigField("aspect_ratio", e.target.value)}
-              disabled={isRunning}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-            >
-              {["16:9", "9:16", "1:1"].map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
+            <>
+              <select
+                value={aspectRatioCustom ? "custom" : config.aspect_ratio}
+                onChange={(e) => {
+                  if (e.target.value === "custom") {
+                    setAspectRatioCustom(true)
+                  } else {
+                    setAspectRatioCustom(false)
+                    setConfigField("aspect_ratio", e.target.value)
+                  }
+                }}
+                disabled={isRunning}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              >
+                {["16:9", "9:16", "1:1"].map(r => <option key={r} value={r}>{r}</option>)}
+                <option value="custom">自定义...</option>
+              </select>
+              {aspectRatioCustom && (
+                <input
+                  type="text"
+                  value={customAspectRatioVal}
+                  onChange={(e) => {
+                    setCustomAspectRatioVal(e.target.value)
+                    if (e.target.value.trim()) setConfigField("aspect_ratio", e.target.value.trim())
+                  }}
+                  placeholder="例：4:3 或 21:9"
+                  disabled={isRunning}
+                  className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                />
+              )}
+            </>
           )}
         </div>
 

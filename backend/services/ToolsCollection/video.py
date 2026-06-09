@@ -22,9 +22,11 @@ from services.ToolsCollection.transcribe import _create_tool_job, _get_tool_job,
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/tools", tags=["tools"])
 
-# Storage: env-configurable; default matches production nginx static root
-TOOLS_MEDIA_DIR = os.getenv("TOOLS_MEDIA_DIR", "/var/www/static/media/tools")
-TOOLS_MEDIA_URL = os.getenv("TOOLS_MEDIA_URL", "/static/media/tools")
+# Storage: default to backend/media/tools (served by existing FastAPI static mount).
+# Override TOOLS_MEDIA_DIR / TOOLS_MEDIA_URL in .env for a separate nginx-served path.
+_BACKEND_MEDIA = MEDIA_DIR  # imported from routers.generate
+TOOLS_MEDIA_DIR = os.getenv("TOOLS_MEDIA_DIR", os.path.join(_BACKEND_MEDIA, "tools"))
+TOOLS_MEDIA_URL = os.getenv("TOOLS_MEDIA_URL", "/media/tools")
 VIDEO_OUT_DIR = os.path.join(TOOLS_MEDIA_DIR, "video")
 os.makedirs(VIDEO_OUT_DIR, exist_ok=True)
 

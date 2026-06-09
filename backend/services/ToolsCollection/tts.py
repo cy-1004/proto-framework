@@ -16,9 +16,11 @@ router = APIRouter(prefix="/api/tools", tags=["tools"])
 TTS_API_URL = "https://api.minimax.io/v1/t2a_v2"
 TTS_MODEL = "speech-2.8-hd"
 
-# Storage: configurable via env vars so the same code works locally and on server
-TOOLS_MEDIA_DIR = os.getenv("TOOLS_MEDIA_DIR", "/var/www/static/media/tools")
-TOOLS_MEDIA_URL = os.getenv("TOOLS_MEDIA_URL", "/static/media/tools")
+# Storage: default to backend/media/tools (served by existing FastAPI static mount).
+# Override TOOLS_MEDIA_DIR / TOOLS_MEDIA_URL in .env for a separate nginx-served path.
+_BACKEND_MEDIA = os.path.join(os.path.dirname(__file__), "..", "..", "media")
+TOOLS_MEDIA_DIR = os.getenv("TOOLS_MEDIA_DIR", os.path.join(_BACKEND_MEDIA, "tools"))
+TOOLS_MEDIA_URL = os.getenv("TOOLS_MEDIA_URL", "/media/tools")
 TTS_DIR = os.path.join(TOOLS_MEDIA_DIR, "tts")
 os.makedirs(TTS_DIR, exist_ok=True)
 
