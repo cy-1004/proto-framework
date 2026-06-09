@@ -531,12 +531,57 @@ def init_db():
                 id         INTEGER PRIMARY KEY AUTOINCREMENT,
                 name       TEXT NOT NULL UNIQUE,
                 pwd        TEXT NOT NULL,
-                quota      INTEGER DEFAULT 100,
+                quota      INTEGER DEFAULT 0,
+                usage      INTEGER DEFAULT 0,
+                enable     INTEGER DEFAULT 1,
                 role       TEXT DEFAULT 'user' CHECK(role IN ('user', 'pro', 'admin')),
                 created_at TEXT DEFAULT (datetime('now', 'localtime'))
             )
         """)
         conn.commit()
+        _user_cols = {row[1] for row in conn.execute("PRAGMA table_info(users)")}
+        if "enable" not in _user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN enable INTEGER DEFAULT 1")
+            conn.commit()
+        if "usage" not in _user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN usage INTEGER DEFAULT 0")
+            conn.commit()
+        # quota existed before with DEFAULT 100 (general limit), repurpose semantics:
+        # quota = max seedance2 generations (0 = unlimited)
+        # The column already exists so no ALTER needed; old rows keep their value.
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tool_usage_logs (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id           INTEGER,
+                user_name         TEXT,
+                tool              TEXT NOT NULL,
+                model             TEXT,
+                input_text        TEXT,
+                output_url        TEXT,
+                output_type       TEXT,
+                prompt_tokens     INTEGER,
+                completion_tokens INTEGER,
+                total_tokens      INTEGER,
+                cost_usd          REAL,
+                cost_cny          REAL,
+                status            TEXT DEFAULT 'ok',
+                created_at        TEXT DEFAULT (datetime('now', 'localtime'))
+            )
+        """)
+        _log_cols = {row[1] for row in conn.execute("PRAGMA table_info(tool_usage_logs)")}
+        for _col, _def in [
+            ("prompt_tokens",     "INTEGER"),
+            ("completion_tokens", "INTEGER"),
+            ("total_tokens",      "INTEGER"),
+            ("cost_usd",          "REAL"),
+            ("cost_cny",          "REAL"),
+        ]:
+            if _col not in _log_cols:
+                conn.execute(f"ALTER TABLE tool_usage_logs ADD COLUMN {_col} {_def}")
+                conn.commit()
+        conn.commit()
+
         admin_count = conn.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'").fetchone()[0]
         if admin_count == 0:
             conn.execute(
@@ -675,3 +720,66 @@ def init_db():
                 ],
             )
             conn.commit()
+
+
+def log_tool_usage(
+    user_id: int | None,
+    user_name: str | None,
+    tool: str,
+    model: str | None,
+    input_text: str | None,
+    output_url: str | None = None,
+    output_type: str | None = None,
+    prompt_tokens: int | None = None,
+    completion_tokens: int | None = None,
+    total_tokens: int | None = None,
+    cost_usd: float | None = None,
+    cost_cny: float | None = None,
+    status: str = "ok",
+) -> None:
+    with get_db() as conn:
+        conn.execute(
+            """INSERT INTO tool_usage_logs
+               (user_id, user_name, tool, model, input_text, output_url, output_type,
+                prompt_tokens, completion_tokens, total_tokens, cost_usd, cost_cny, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                user_id,
+                user_name,
+                tool,
+                model,
+                (input_text or "")[:300],
+                output_url,
+                output_type,
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+                cost_usd,
+                cost_cny,
+                status,
+            ),
+        )
+        conn.commit()
+
+
+def consume_quota(user_id: int) -> bool:
+    """Increment usage. If usage reaches quota (quota > 0 means limited), set enable=0.
+    Returns False if user was already disabled."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT enable, usage, quota FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+        if not row:
+            return True  # anonymous / not found → allow
+        if row["enable"] == 0:
+            return False
+        new_usage = (row["usage"] or 0) + 1
+        quota = row["quota"] or 0
+        # quota=0 means unlimited; disable when new_usage reaches the limit
+        new_enable = 0 if (quota > 0 and new_usage >= quota) else 1
+        conn.execute(
+            "UPDATE users SET usage = ?, enable = ? WHERE id = ?",
+            (new_usage, new_enable, user_id),
+        )
+        conn.commit()
+    return True

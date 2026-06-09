@@ -23,10 +23,13 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
 
 
+_USER_COLS = "id, name, quota, usage, enable, role, created_at"
+
+
 @router.get("")
 def list_users(admin: dict = Depends(require_admin)):
     with get_db() as conn:
-        rows = conn.execute("SELECT id, name, quota, role, created_at FROM users ORDER BY id").fetchall()
+        rows = conn.execute(f"SELECT {_USER_COLS} FROM users ORDER BY id").fetchall()
     return [dict(r) for r in rows]
 
 
@@ -43,7 +46,7 @@ def create_user(body: UserCreate, admin: dict = Depends(require_admin)):
             (body.name, pwd_context.hash(body.pwd), body.quota, body.role),
         )
         conn.commit()
-        row = conn.execute("SELECT id, name, quota, role, created_at FROM users WHERE name = ?", (body.name,)).fetchone()
+        row = conn.execute(f"SELECT {_USER_COLS} FROM users WHERE name = ?", (body.name,)).fetchone()
     return dict(row)
 
 
@@ -75,7 +78,7 @@ def update_user(user_id: int, body: UserUpdate, admin: dict = Depends(require_ad
             params.append(user_id)
             conn.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", params)
             conn.commit()
-        row = conn.execute("SELECT id, name, quota, role, created_at FROM users WHERE id = ?", (user_id,)).fetchone()
+        row = conn.execute(f"SELECT {_USER_COLS} FROM users WHERE id = ?", (user_id,)).fetchone()
     return dict(row)
 
 

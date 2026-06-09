@@ -15,7 +15,9 @@
       "Bash(Sort-Object)",
       "WebFetch(domain:platform.minimaxi.com)",
       "WebFetch(domain:www.minimaxi.com)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(python -c ' *)",
+      "WebFetch(domain:www.volcengine.com)"
     ]
   }
 }

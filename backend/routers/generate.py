@@ -406,8 +406,9 @@ def _generate_one_image_qwen(prompt: str, config: dict, model: str) -> tuple[byt
 # ---------------------------------------------------------------------------
 
 
-def _generate_one_video_seedance(prompt: str, config: dict, model: str, progress_cb: Callable | None = None) -> tuple[bytes, str]:
+def _generate_one_video_seedance(prompt: str, config: dict, model: str, progress_cb: Callable | None = None, **kwargs) -> tuple[bytes, str]:
     """Generate one video via Volcengine Ark Seedance API (async polling)."""
+    usage_out: dict | None = kwargs.get("usage_out")
     client = _get_ark_client()
     duration = config.get("duration", 5)
     camera_fixed = config.get("camera_fixed", False)
@@ -436,6 +437,11 @@ def _generate_one_video_seedance(prompt: str, config: dict, model: str, progress
                 video_url = getattr(get_result.output, "video_url", None)
             if not video_url:
                 raise RuntimeError("Seedance task succeeded but no video URL found")
+            # Capture token usage if the SDK returns it
+            if usage_out is not None:
+                raw_usage = getattr(get_result, "usage", None)
+                if raw_usage is not None:
+                    usage_out["total_tokens"] = getattr(raw_usage, "total_tokens", None)
             resp = requests.get(video_url, timeout=120)
             resp.raise_for_status()
             return resp.content, "video/mp4"
@@ -449,8 +455,9 @@ def _generate_one_video_seedance(prompt: str, config: dict, model: str, progress
     raise RuntimeError("Seedance task timed out after 360s")
 
 
-def _generate_one_video_seedance_v2(prompt: str, config: dict, model: str, progress_cb: Callable | None = None) -> tuple[bytes, str]:
+def _generate_one_video_seedance_v2(prompt: str, config: dict, model: str, progress_cb: Callable | None = None, **kwargs) -> tuple[bytes, str]:
     """Generate video via Seedance 2.0 API with multimodal references."""
+    usage_out: dict | None = kwargs.get("usage_out")
     api_key = os.getenv("ARK_API_KEY", "")
     if not api_key:
         raise RuntimeError("ARK_API_KEY not configured")
@@ -565,6 +572,9 @@ def _generate_one_video_seedance_v2(prompt: str, config: dict, model: str, progr
                 video_url = data["output"].get("video_url") if isinstance(data["output"], dict) else None
             if not video_url:
                 raise RuntimeError("Seedance 2.0 succeeded but no video URL")
+            # Capture token usage from response
+            if usage_out is not None and isinstance(data.get("usage"), dict):
+                usage_out["total_tokens"] = data["usage"].get("total_tokens")
             video_resp = requests.get(video_url, timeout=180)
             video_resp.raise_for_status()
             return video_resp.content, "video/mp4"

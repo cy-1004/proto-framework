@@ -25,7 +25,9 @@ def _extract_user_from_token(request: Request) -> Optional[dict]:
     if not user_id:
         return None
     with get_db() as conn:
-        row = conn.execute("SELECT id, name, quota, role FROM users WHERE id = ?", (user_id,)).fetchone()
+        row = conn.execute(
+            "SELECT id, name, quota, usage, enable, role FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
     if not row:
         return None
     return dict(row)
@@ -39,7 +41,7 @@ async def get_current_user(request: Request) -> Optional[dict]:
 
 async def require_login(request: Request) -> dict:
     if not ENABLE_LOGIN:
-        return {"id": 0, "name": "anonymous", "quota": 9999, "role": "admin"}
+        return {"id": 0, "name": "anonymous", "quota": 0, "usage": 0, "enable": 1, "role": "admin"}
     user = _extract_user_from_token(request)
     if not user:
         raise HTTPException(status_code=401, detail="未登录或 token 无效")
@@ -57,4 +59,12 @@ async def check_quota(request: Request) -> dict:
     user = await require_login(request)
     if ENABLE_LOGIN and user.get("role") == "user" and user.get("quota", 0) < 0:
         raise HTTPException(status_code=403, detail="配额已用尽，请联系管理员")
+    return user
+
+
+async def require_quota_enabled(request: Request) -> dict:
+    """Blocks request when user's enable flag is 0 (quota exhausted)."""
+    user = await require_login(request)
+    if ENABLE_LOGIN and user.get("enable", 1) == 0:
+        raise HTTPException(status_code=403, detail="您的使用配额已耗尽，请联系管理员充值")
     return user

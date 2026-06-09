@@ -6,7 +6,7 @@ import requests
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from db import get_db
+from db import consume_quota, get_db, log_tool_usage
 from deps import require_login
 from services.ToolsCollection.transcribe import _create_tool_job, _update_tool_job
 
@@ -15,8 +15,11 @@ router = APIRouter(prefix="/api/tools", tags=["tools"])
 
 TTS_API_URL = "https://api.minimax.io/v1/t2a_v2"
 TTS_MODEL = "speech-2.8-hd"
-MEDIA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "media")
-TTS_DIR = os.path.join(MEDIA_DIR, "tools_tts")
+
+# Storage: configurable via env vars so the same code works locally and on server
+TOOLS_MEDIA_DIR = os.getenv("TOOLS_MEDIA_DIR", "/var/www/static/media/tools")
+TOOLS_MEDIA_URL = os.getenv("TOOLS_MEDIA_URL", "/static/media/tools")
+TTS_DIR = os.path.join(TOOLS_MEDIA_DIR, "tts")
 os.makedirs(TTS_DIR, exist_ok=True)
 
 
@@ -101,8 +104,7 @@ def synthesize_tts(body: TTSRequest, user: dict = Depends(require_login)):
         raise HTTPException(502, err)
 
     uid = uuid.uuid4().hex[:12]
-    filename = f"tools_tts/{uid}.mp3"
-    audio_path = os.path.join(MEDIA_DIR, filename)
+    audio_path = os.path.join(TTS_DIR, f"{uid}.mp3")
     with open(audio_path, "wb") as f:
         f.write(bytes.fromhex(audio_hex))
 
@@ -110,20 +112,31 @@ def synthesize_tts(body: TTSRequest, user: dict = Depends(require_login)):
     duration_s = round(duration_ms / 1000, 2) if duration_ms else None
     file_size = os.path.getsize(audio_path)
     cost = round((duration_s or 0) / 3600 * 0.1, 6)
+    output_url = f"{TOOLS_MEDIA_URL}/tts/{uid}.mp3"
 
     _update_tool_job(
         job_id,
         status="complete",
         progress=100,
         message="生成完成",
-        result=filename,
+        result=output_url,
         audio_duration=duration_s,
         cost_usd=cost,
     )
 
+    log_tool_usage(
+        user_id=user["id"],
+        user_name=user.get("name"),
+        tool="tts",
+        model=TTS_MODEL,
+        input_text=body.text,
+        output_url=output_url,
+        output_type="audio",
+    )
+
     return {
         "job_id": job_id,
-        "url": f"/media/{filename}",
+        "url": output_url,
         "duration": duration_s,
         "size": file_size,
     }
