@@ -152,7 +152,7 @@ export default function ToolsPage() {
           {TOOLS.map(tool => {
             const isActive = tool.id === activeId
             return (
-              <div key={tool.id} className={isActive ? "mx-auto max-w-2xl" : "hidden"}>
+              <div key={tool.id} className={isActive ? "mx-auto w-full max-w-[82%]" : "hidden"}>
                 <div className="mb-6">
                   <h2 className="text-xl font-semibold">{tool.label}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{tool.desc}</p>

@@ -72,7 +72,7 @@ export default function VoicePickerModal({ value, onChange, disabled }: Props) {
         </button>
       </DialogTrigger>
 
-      <DialogContent className="flex h-[600px] w-full max-w-xl flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex h-[600px] w-[90vw] max-w-3xl flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="shrink-0 border-b px-5 py-3.5">
           <DialogTitle className="text-base">选择音色</DialogTitle>
         </DialogHeader>
@@ -124,7 +124,7 @@ export default function VoicePickerModal({ value, onChange, disabled }: Props) {
               <p className="text-sm text-muted-foreground">未找到匹配的音色</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {displayedVoices.map(v => {
                 const isSelected = pending === v.id
                 const g = GENDER_LABEL[v.gender]
