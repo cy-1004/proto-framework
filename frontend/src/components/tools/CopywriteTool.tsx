@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { apiFetch } from "@/lib/api"
 
+const MODEL_OPTIONS = [
+  { value: "google/gemini-3-flash-preview",  label: "Gemini 3 Flash",    badge: "Google" },
+  { value: "google/gemini-3.1-pro-preview",  label: "Gemini 3.1 Pro",   badge: "Google" },
+  { value: "openai/gpt-4o",                  label: "GPT-4o",            badge: "OpenAI" },
+  { value: "openai/gpt-5.4-mini",            label: "GPT-5.4 Mini",      badge: "OpenAI" },
+  { value: "minimax/minimax-m2.7",           label: "MiniMax M2.7",      badge: "MiniMax" },
+  { value: "z-ai/glm-4.7",                   label: "GLM-4.7",           badge: "Z-AI" },
+  { value: "xiaomi/mimo-v2.5",               label: "MiMo v2.5",         badge: "Xiaomi" },
+]
+
 const DURATION_OPTIONS = [
   { value: 15,  label: "15 秒",  hint: "约 50 字" },
   { value: 30,  label: "30 秒",  hint: "约 100 字" },
@@ -17,6 +27,7 @@ export default function CopywriteTool() {
   const [productInfo, setProductInfo] = useState("")
   const [referenceText, setReferenceText] = useState("")
   const [duration, setDuration] = useState(30)
+  const [model, setModel] = useState(MODEL_OPTIONS[0].value)
   const [outputText, setOutputText] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -41,6 +52,7 @@ export default function CopywriteTool() {
         product_info: productInfo,
         reference_text: referenceText,
         duration_seconds: duration,
+        model,
       }),
     }).catch((e: unknown) => {
       setError(e instanceof Error ? e.message : "请求失败")
@@ -139,6 +151,28 @@ export default function CopywriteTool() {
           className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
         />
         <p className="text-xs text-muted-foreground">商品信息与参考内容至少填写一项</p>
+      </div>
+
+      {/* Model selector */}
+      <div className="space-y-2">
+        <Label>模型</Label>
+        <div className="flex flex-wrap gap-2">
+          {MODEL_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setModel(opt.value)}
+              disabled={isGenerating}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+                model === opt.value
+                  ? "border-primary bg-primary/10 font-medium text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              }`}
+            >
+              <span className="text-xs opacity-60">{opt.badge}</span>
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Duration selector */}

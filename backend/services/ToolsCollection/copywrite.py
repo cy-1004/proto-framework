@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/tools", tags=["tools"])
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_MODEL = os.getenv("COPYWRITE_MODEL", "google/gemini-2.0-flash-001")
+DEFAULT_MODEL = os.getenv("COPYWRITE_MODEL", "google/gemini-3-flash-preview")
 
 SYSTEM_PROMPT = (
     "你是一位专业的短视频带货口播文案创作者，深度熟悉 TikTok/抖音平台的内容节奏与用户心理，"
