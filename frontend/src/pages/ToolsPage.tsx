@@ -45,8 +45,6 @@ export default function ToolsPage() {
   const { user, isLoginEnabled, logout } = useAuth()
   const [activeId, setActiveId] = useState(TOOLS[0].id)
 
-  const activeTool = TOOLS.find(t => t.id === activeId)!
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
@@ -151,17 +149,21 @@ export default function ToolsPage() {
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-2xl">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold">{activeTool.label}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{activeTool.desc}</p>
-            </div>
-
-            {activeId === "transcribe" && <TranscribeTool />}
-            {activeId === "copywrite" && <CopywriteTool />}
-            {activeId === "tts" && <TTSTool />}
-            {activeId === "video" && <VideoGenTool />}
-          </div>
+          {TOOLS.map(tool => {
+            const isActive = tool.id === activeId
+            return (
+              <div key={tool.id} className={isActive ? "mx-auto max-w-2xl" : "hidden"}>
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold">{tool.label}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{tool.desc}</p>
+                </div>
+                {tool.id === "transcribe" && <TranscribeTool />}
+                {tool.id === "copywrite" && <CopywriteTool />}
+                {tool.id === "tts" && <TTSTool />}
+                {tool.id === "video" && <VideoGenTool />}
+              </div>
+            )
+          })}
         </main>
       </div>
     </div>
