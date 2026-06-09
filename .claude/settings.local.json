@@ -12,7 +12,10 @@
       "Bash(xargs grep -l \"tiktok\\\\|TikTok\")",
       "Bash(Get-ChildItem -Path \"C:\\\\workspace\\\\vultr-proto-framework\\\\proto-framework\\\\frontend\\\\src\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Sort-Object)"
+      "Bash(Sort-Object)",
+      "WebFetch(domain:platform.minimaxi.com)",
+      "WebFetch(domain:www.minimaxi.com)",
+      "Bash(npx tsc *)"
     ]
   }
 }

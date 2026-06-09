@@ -4,33 +4,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { apiFetch } from "@/lib/api"
+import VoicePickerModal from "./VoicePickerModal"
+import { EMOTION_OPTIONS } from "./voiceData"
 
-const VOICE_PRESETS = [
-  { value: "Chinese (Mandarin)_Unrestrained_Young_Man", label: "青年男声 · 无拘束" },
-  { value: "Chinese (Mandarin)_Lively_Young_Woman", label: "青年女声 · 活泼" },
-  { value: "Chinese (Mandarin)_Gentle_Young_Woman", label: "青年女声 · 温柔" },
-  { value: "Chinese (Mandarin)_Soothing_Male", label: "男声 · 舒缓" },
-  { value: "Chinese (Mandarin)_Deep_Male", label: "男声 · 深沉" },
-  { value: "Chinese (Mandarin)_Story_Teller", label: "故事讲述者" },
-]
-
-const EMOTION_OPTIONS = [
-  { value: "neutral", label: "中性" },
-  { value: "happy", label: "开心" },
-  { value: "sad", label: "悲伤" },
-  { value: "angry", label: "愤怒" },
-  { value: "fearful", label: "恐惧" },
-  { value: "disgusted", label: "厌恶" },
-  { value: "surprised", label: "惊讶" },
-]
+const DEFAULT_VOICE = "male-qn-qingse"
 
 interface PronEntry { text: string; pronunciation: string }
 
 export default function TTSTool() {
   const [text, setText] = useState("")
-  const [voiceId, setVoiceId] = useState(VOICE_PRESETS[0].value)
-  const [customVoice, setCustomVoice] = useState("")
-  const [useCustomVoice, setUseCustomVoice] = useState(false)
+  const [voiceId, setVoiceId] = useState(DEFAULT_VOICE)
   const [speed, setSpeed] = useState(1.0)
   const [vol, setVol] = useState(1.0)
   const [pitch, setPitch] = useState(0)
@@ -54,7 +37,7 @@ export default function TTSTool() {
 
     const payload = {
       text: text.trim(),
-      voice_id: useCustomVoice ? customVoice.trim() : voiceId,
+      voice_id: voiceId,
       speed,
       vol,
       pitch,
@@ -97,30 +80,12 @@ export default function TTSTool() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Voice */}
-        <div className="space-y-2">
-          <Label>音色</Label>
-          <select
-            value={useCustomVoice ? "__custom__" : voiceId}
-            onChange={(e) => {
-              if (e.target.value === "__custom__") { setUseCustomVoice(true) }
-              else { setUseCustomVoice(false); setVoiceId(e.target.value) }
-            }}
-            disabled={isGenerating}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-          >
-            {VOICE_PRESETS.map(v => (
-              <option key={v.value} value={v.value}>{v.label}</option>
-            ))}
-            <option value="__custom__">自定义...</option>
-          </select>
-          {useCustomVoice && (
-            <Input
-              value={customVoice}
-              onChange={(e) => setCustomVoice(e.target.value)}
-              placeholder="输入 MiniMax voice_id"
-              disabled={isGenerating}
-            />
-          )}
+        <div className="space-y-2 sm:col-span-2">
+          <Label>
+            音色
+            <span className="ml-1.5 text-xs font-normal text-muted-foreground">中英文音色，支持搜索</span>
+          </Label>
+          <VoicePickerModal value={voiceId} onChange={setVoiceId} disabled={isGenerating} />
         </div>
 
         {/* Emotion */}
@@ -132,10 +97,21 @@ export default function TTSTool() {
             disabled={isGenerating}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
           >
-            {EMOTION_OPTIONS.map(e => (
-              <option key={e.value} value={e.value}>{e.label}</option>
+            {EMOTION_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.emoji} {opt.label}</option>
             ))}
           </select>
+        </div>
+
+        {/* Pitch */}
+        <div className="space-y-2">
+          <Label>音调 <span className="text-xs text-muted-foreground">(-12 ~ 12)</span></Label>
+          <Input
+            type="number" min={-12} max={12} step={1}
+            value={pitch}
+            onChange={(e) => setPitch(parseInt(e.target.value) || 0)}
+            disabled={isGenerating}
+          />
         </div>
 
         {/* Speed */}
@@ -165,17 +141,6 @@ export default function TTSTool() {
             onChange={(e) => setVol(parseFloat(e.target.value))}
             disabled={isGenerating}
             className="w-full accent-primary"
-          />
-        </div>
-
-        {/* Pitch */}
-        <div className="space-y-2">
-          <Label>音调 <span className="text-xs text-muted-foreground">(-12 ~ 12)</span></Label>
-          <Input
-            type="number" min={-12} max={12} step={1}
-            value={pitch}
-            onChange={(e) => setPitch(parseInt(e.target.value) || 0)}
-            disabled={isGenerating}
           />
         </div>
       </div>
