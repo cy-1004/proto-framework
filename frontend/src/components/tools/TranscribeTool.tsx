@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Upload, Link, Copy, Check, FileAudio } from "lucide-react"
+import { Upload, Link, Copy, Check, FileAudio, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -183,6 +183,57 @@ export default function TranscribeTool() {
           )}
         </div>
       )}
+      {/* Download helper cards */}
+      <div className="space-y-2 pt-2">
+        <p className="text-xs font-medium text-muted-foreground">视频下载工具</p>
+        <div className="grid grid-cols-2 gap-3">
+          {/* TikTok */}
+          <a
+            href="https://zh.savefrom.net/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-3 rounded-xl border border-border bg-gradient-to-br from-[#010101] to-[#1a1a2e] p-4 transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20"
+          >
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+              {/* TikTok logo SVG */}
+              <svg viewBox="0 0 48 48" className="size-6 fill-white">
+                <path d="M38.9 13.2a11.6 11.6 0 0 1-7.1-7.2h-6v21.7l-.1 9.4a6.8 6.8 0 1 1-4.8-6.5V24.4a13.3 13.3 0 1 0 11.3 13.1V22.6a18 18 0 0 0 10.5 3.4v-5.9a11.6 11.6 0 0 1-3.8-.9z" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-semibold text-white">TikTok 下载</span>
+                <ExternalLink className="size-3 text-white/40 transition-colors group-hover:text-white/70" />
+              </div>
+              <p className="mt-0.5 text-xs text-white/50">savefrom.net</p>
+            </div>
+          </a>
+
+          {/* Douyin */}
+          <a
+            href="https://blog.aitoolwang.com/dy/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-3 rounded-xl border border-border bg-gradient-to-br from-[#161823] to-[#2b2040] p-4 transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-900/20"
+          >
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+              {/* Douyin logo — stylised double-D */}
+              <svg viewBox="0 0 48 48" className="size-6">
+                <circle cx="30" cy="18" r="8" fill="none" stroke="#69C9D0" strokeWidth="4" />
+                <circle cx="18" cy="30" r="8" fill="none" stroke="#EE1D52" strokeWidth="4" />
+                <rect x="22" y="10" width="4" height="28" rx="2" fill="white" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-semibold text-white">抖音下载</span>
+                <ExternalLink className="size-3 text-white/40 transition-colors group-hover:text-white/70" />
+              </div>
+              <p className="mt-0.5 text-xs text-white/50">aitoolwang.com</p>
+            </div>
+          </a>
+        </div>
+      </div>
     </div>
   )
 }

@@ -15,20 +15,46 @@ router = APIRouter(prefix="/api/tools", tags=["tools"])
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = os.getenv("COPYWRITE_MODEL", "google/gemini-2.0-flash-001")
 
-SYSTEM_PROMPT = """你是一位专业的短视频口播文案创作者，擅长根据参考内容创作适合 TikTok/抖音平台的口播文案。
+SYSTEM_PROMPT = (
+    "你是一位专业的短视频带货口播文案创作者，深度熟悉 TikTok/抖音平台的内容节奏与用户心理，"
+    "擅长将商品卖点自然融入口播叙事，驱动观众完成关注、互动或购买行为。"
+)
 
-创作要求：
-1. 口语化表达，节奏感强，适合真人口播
-2. 开头要有吸引力，能在前 3 秒抓住观众注意力
-3. 语言简洁有力，避免复杂句式，多用短句
-4. 结尾要有引导行动的话术（点赞、关注、评论或购买）
-5. 整体时长控制在 30–60 秒内（约 150–300 字）
+# chars/second for natural Chinese speech
+_CPS = 3.5
 
-请根据用户提供的参考内容，创作一段原创口播文案。只输出文案正文，不要解释、标注或额外说明。"""
+_DURATION_LABELS = {15: "15秒", 30: "30秒", 45: "45秒", 60: "1分钟", 90: "1分半", 120: "2分钟"}
+
+
+def _build_user_message(product_info: str, reference_text: str, duration_seconds: int) -> str:
+    word_count = int(duration_seconds * _CPS)
+    duration_label = _DURATION_LABELS.get(duration_seconds, f"{duration_seconds}秒")
+
+    parts: list[str] = []
+
+    if product_info.strip():
+        parts.append(f"【带货商品信息】\n{product_info.strip()}")
+
+    if reference_text.strip():
+        parts.append(f"【参考内容 / 灵感来源】\n{reference_text.strip()}")
+
+    parts.append(
+        f"【创作要求】\n"
+        f"- 目标时长：{duration_label}（建议 {word_count} 字左右，以实际口播节奏为准）\n"
+        f"- 口语化短句，节奏感强，适合真人口播\n"
+        f"- 开头前 3 秒必须足够抓眼球，让观众不划走\n"
+        f"- 自然植入商品卖点，不能有硬广感\n"
+        f"- 结尾加上明确的引导行动话术（购买 / 关注 / 评论 / 收藏）\n\n"
+        f"请直接输出口播文案正文，不需要标注段落结构，不需要任何解释说明。"
+    )
+
+    return "\n\n".join(parts)
 
 
 class CopywriteRequest(BaseModel):
-    reference_text: str
+    product_info: str = ""
+    reference_text: str = ""
+    duration_seconds: int = 30
     model: str = DEFAULT_MODEL
 
 
@@ -37,12 +63,16 @@ async def stream_copywrite(body: CopywriteRequest, user: dict = Depends(require_
     api_key = os.getenv("OPENROUTER_API_KEY", "")
     if not api_key:
         raise HTTPException(500, "OPENROUTER_API_KEY 未配置")
-    if not body.reference_text.strip():
-        raise HTTPException(400, "参考内容不能为空")
+    if not body.product_info.strip() and not body.reference_text.strip():
+        raise HTTPException(400, "请至少填写商品信息或参考内容之一")
+    if body.duration_seconds < 10 or body.duration_seconds > 300:
+        raise HTTPException(400, "时长需在 10–300 秒之间")
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"参考内容：\n\n{body.reference_text.strip()}"},
+        {"role": "user", "content": _build_user_message(
+            body.product_info, body.reference_text, body.duration_seconds
+        )},
     ]
 
     async def event_stream():
